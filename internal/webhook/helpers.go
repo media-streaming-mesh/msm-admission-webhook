@@ -8,7 +8,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,9 +31,9 @@ func okReviewResponse() *v1.AdmissionResponse {
 	}
 }
 
-func validateAnnotationValue(value string) error {
+func (w *MsmWebhook) validateAnnotationValue(value string) error {
 	urls, err := parseAnnotationValue(value)
-	logrus.Infof("Annotation result: %v", urls)
+	w.Log.Debugf("Annotation result: %v", urls)
 	return err
 }
 
@@ -113,7 +112,7 @@ func getTag() string {
 	return tag
 }
 
-func applyDeploymentKind(patches []patchOperation, kind string) {
+func (w *MsmWebhook) applyDeploymentKind(patches []patchOperation, kind string) {
 	switch kind {
 	case pod:
 		return
@@ -130,6 +129,6 @@ func applyDeploymentKind(patches []patchOperation, kind string) {
 			patches[i].Path = deploymentSubPath + patches[i].Path
 		}
 	default:
-		logrus.Fatalf(unsupportedKind, kind)
+		w.Log.Fatalf(unsupportedKind, kind)
 	}
 }

@@ -20,16 +20,17 @@ import (
 func (w *MsmWebhook) Register(ctx context.Context) error {
 	w.Log.Infof("Registering MutatingWebhookConfiguration")
 	defer w.Log.Infof("Successfully registered MutatingWebhookConfiguration")
+
 	path := "/mutate"
 	policy := admissionv1.Fail
 	sideEffects := admissionv1.SideEffectClassNone
+
 	webhookConfig := &admissionv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: msmName,
 		},
 		Webhooks: []admissionv1.MutatingWebhook{
 			{
-
 				Name: fmt.Sprintf("%v.%v", msmName, msmAnnotation),
 				Rules: []admissionv1.RuleWithOperations{
 					{
@@ -63,8 +64,8 @@ func (w *MsmWebhook) Register(ctx context.Context) error {
 			},
 		},
 	}
-
 	_, err := w.client.MutatingWebhookConfigurations().Create(ctx, webhookConfig, metav1.CreateOptions{})
+
 	return err
 }
 
@@ -72,6 +73,7 @@ func (w *MsmWebhook) Register(ctx context.Context) error {
 func (w *MsmWebhook) Unregister(ctx context.Context) error {
 	w.Log.Infof("Unregistering MutatingWebhookConfiguration")
 	defer w.Log.Infof("Successfully unregistered MutatingWebhookConfiguration")
+
 	return w.client.MutatingWebhookConfigurations().Delete(ctx, msmName, metav1.DeleteOptions{})
 }
 

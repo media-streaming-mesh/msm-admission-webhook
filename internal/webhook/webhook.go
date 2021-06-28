@@ -68,18 +68,18 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	// admission webhook registration
 	c, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 
 	clientset, err := kubernetes.NewForConfig(c)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 	w.client = clientset.AdmissionregistrationV1()
 
 	err = w.Register(ctx)
 	if err != nil {
-		w.Log.Fatal(err.Error())
+		return err
 	}
 
 	// http server and server handler initialization
@@ -98,11 +98,13 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 
 func (w *MsmWebhook) Start() error {
 	w.Log.Infof("Server successfully started: listening on port 443")
+
 	return w.server.ListenAndServeTLS("", "")
 }
 
 func (w *MsmWebhook) Close() {
 	defer w.Log.Infof("Server successfully closed")
+
 	_ = w.Unregister(context.Background())
 	_ = w.server.Close()
 }

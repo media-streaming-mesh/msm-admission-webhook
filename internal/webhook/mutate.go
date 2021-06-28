@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/sirupsen/logrus"
-
 	v1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,24 +35,24 @@ var (
 )
 
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
-	w.Log.Infof("AdmissionReview for req=%v", request)
+	w.Log.Debugf("AdmissionReview for request=%v", request)
 
 	if !isSupportKind(request) {
 		return okReviewResponse()
 	}
 
-	metaAndSpec, err := getMetaAndSpec(request)
+	metaAndSpec, err := w.getMetaAndSpec(request)
 	if err != nil {
 		return errorReviewResponse(err)
 	}
 
-	value, ok := msmAnnotationValue(ignoredNamespaces, metaAndSpec)
+	value, ok := w.msmAnnotationValue(ignoredNamespaces, metaAndSpec)
 	if !ok {
-		logrus.Infof("Skipping validation for %s/%s due to policy check", metaAndSpec.meta.Namespace, metaAndSpec.meta.Name)
+		w.Log.Infof("Skipping validation for %s/%s due to policy check", metaAndSpec.meta.Namespace, metaAndSpec.meta.Name)
 		return okReviewResponse()
 	}
 
-	if err = validateAnnotationValue(value); err != nil {
+	if err = w.validateAnnotationValue(value); err != nil {
 		return errorReviewResponse(err)
 	}
 
@@ -63,13 +61,13 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 
 	// create container to inject into pod
 	patch := createMsmContainerPatch(metaAndSpec, value)
-	applyDeploymentKind(patch, request.Kind.Kind)
+	w.applyDeploymentKind(patch, request.Kind.Kind)
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
 		return errorReviewResponse(err)
 	}
 
-	w.Log.Infof("AdmissionResponse, patch=%v\n", string(patchBytes))
+	w.Log.Debugf("AdmissionResponse, patch=%v\n", string(patchBytes))
 	return createReviewResponse(patchBytes)
 }
 
@@ -84,19 +82,19 @@ func createReviewResponse(data []byte) *v1.AdmissionResponse {
 	}
 }
 
-func msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
+func (w *MsmWebhook) msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
 
 	// skip special kubernetes system namespaces
 	for _, namespace := range ignoredNamespaceList {
 		if tuple.meta.Namespace == namespace {
-			logrus.Infof("Skip validation for %v for it's in special namespace:%v", tuple.meta.Name, tuple.meta.Namespace)
+			w.Log.Infof("Skip validation for %v for it's in special namespace:%v", tuple.meta.Name, tuple.meta.Namespace)
 			return "", false
 		}
 	}
 
 	annotations := tuple.meta.GetAnnotations()
 	if annotations == nil {
-		logrus.Info("No annotations, skip")
+		w.Log.Info("No annotations, skip")
 		return "", false
 	}
 
@@ -104,13 +102,13 @@ func msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (s
 	return value, ok
 }
 
-func getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
+func (w *MsmWebhook) getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
 	result := &podSpecAndMeta{}
 	switch request.Kind.Kind {
 	case deployment:
 		var d appsv1.Deployment
 		if err := json.Unmarshal(request.Object.Raw, &d); err != nil {
-			logrus.Errorf("Could not unmarshal raw object: %v", err)
+			w.Log.Errorf("Could not unmarshal raw object: %v", err)
 			return nil, err
 		}
 		result.meta = &d.ObjectMeta
@@ -118,7 +116,7 @@ func getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
 	case pod:
 		var p corev1.Pod
 		if err := json.Unmarshal(request.Object.Raw, &p); err != nil {
-			logrus.Errorf("Could not unmarshal raw object: %v", err)
+			w.Log.Errorf("Could not unmarshal raw object: %v", err)
 			return nil, err
 		}
 		result.meta = &p.ObjectMeta
@@ -126,7 +124,7 @@ func getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
 	case statefulSet:
 		var ss appsv1.StatefulSet
 		if err := json.Unmarshal(request.Object.Raw, &ss); err != nil {
-			logrus.Errorf("Could not unmarshal raw object: %v", err)
+			w.Log.Errorf("Could not unmarshal raw object: %v", err)
 			return nil, err
 		}
 		result.meta = &ss.ObjectMeta
@@ -134,7 +132,7 @@ func getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
 	case daemonSet:
 		var ds appsv1.StatefulSet
 		if err := json.Unmarshal(request.Object.Raw, &ds); err != nil {
-			logrus.Errorf("Could not unmarshal raw object: %v", err)
+			w.Log.Errorf("Could not unmarshal raw object: %v", err)
 			return nil, err
 		}
 		result.meta = &ds.ObjectMeta

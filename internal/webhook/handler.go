@@ -33,8 +33,8 @@ func (w *MsmWebhook) handle(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 	msmAdmissionWebhookReview.Response.UID = requestReview.Request.UID
-	msmAdmissionWebhookReview.Kind = "AdmissionReview"
-	msmAdmissionWebhookReview.APIVersion = "admission.k8s.io/v1"
+	msmAdmissionWebhookReview.Kind = admissionReviewKind
+	msmAdmissionWebhookReview.APIVersion = admissionReviewAPIVersion
 
 	resp, err := json.Marshal(msmAdmissionWebhookReview)
 	if err != nil {
@@ -69,7 +69,6 @@ func (w *MsmWebhook) readRequest(r *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-// parseAdmissionReview
 func (w *MsmWebhook) parseAdmissionReview(body []byte) (*v1.AdmissionReview, error) {
 	r := &v1.AdmissionReview{}
 	if _, _, err := w.deserializer.Decode(body, nil, r); err != nil {
