@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,39 +22,59 @@ func init() {
 	// Log as JSON instead of the default ASCII formatter.
 	log.SetFormatter(&log.JSONFormatter{})
 	// Output to stdout instead of the default stderr
-	log.SetOutput(os.Stdout)
+	// open a file
 	setLogLvl(logger)
 }
 
 // main entry point of application
 func main() {
-	logger.Info("Starting SM Admission Webhook")
+
+	f, err := os.OpenFile("/var/log/testlogrus.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Printf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	logger.SetOutput(f)
+
+	logger.Info("Starting MSM Admission Webhook")
 	logger.Infof("Version: %v", version)
 
 	// Capture signals and block before exit
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT)
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		os.Interrupt,
+		os.Kill,
+		syscall.SIGHUP,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+	)
+	defer cancel()
 
 	w := webhook.New(webhook.UseDeps(
 		func(d *webhook.Deps) {
 			d.Log = logger
 		}))
 
-	err := w.Init()
+	err = w.Init(ctx)
 	if err != nil {
-		w.Log.Fatalf("Could not initialize admission webhook, aborting with error=%s", err)
+		logger.Fatalf("Could not initialize admission webhook, aborting with error=%s", err)
 	}
 
+	var startServerErr = make(chan error)
 	go func() {
-		err := w.Start()
-		if err != nil {
-			w.Log.Fatalf("Could not start webhook server, aborting with error=%s", err)
-		}
+		startServerErr <- w.Start()
 	}()
 
-	<-c
-	// cleanup
-	w.Close()
+	select {
+	case err := <-startServerErr:
+		if ctx.Err() != nil {
+			logger.Fatal(err.Error())
+		}
+	case <-ctx.Done():
+		w.Close()
+		return
+	}
+
 }
 
 // sets the log level of the logger

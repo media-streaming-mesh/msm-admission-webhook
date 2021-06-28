@@ -2,11 +2,7 @@ package webhook
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/url"
-	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -41,7 +37,7 @@ var (
 )
 
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
-	w.Log.Infof("AdmissionReview for =%v", request)
+	w.Log.Infof("AdmissionReview for req=%v", request)
 
 	if !isSupportKind(request) {
 		return okReviewResponse()
@@ -67,65 +63,14 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 
 	// create container to inject into pod
 	patch := createMsmContainerPatch(metaAndSpec, value)
-	// applyDeploymentKind(patch, request.Kind.Kind)
+	applyDeploymentKind(patch, request.Kind.Kind)
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
 		return errorReviewResponse(err)
 	}
 
-	w.Log.Infof("AdmissionResponse: patch=%v\n", string(patchBytes))
+	w.Log.Infof("AdmissionResponse, patch=%v\n", string(patchBytes))
 	return createReviewResponse(patchBytes)
-}
-
-func createMsmContainerPatch(tuple *podSpecAndMeta, annotationValue string) (patch []patchOperation) {
-	msmProxyContainer := corev1.Container{
-		Name:            "msm-proxy-sidecar",
-		Command:         []string{"/bin/test"},
-		Image:           fmt.Sprintf("%s/%s:%s", "test", "test", "test"),
-		ImagePullPolicy: getPullPolicyValue(),
-	}
-
-	patch = append(patch, addContainer(tuple.spec, []corev1.Container{msmProxyContainer})...)
-
-	return patch
-}
-
-func addContainer(spec *corev1.PodSpec, containers []corev1.Container) (patch []patchOperation) {
-	first := len(spec.Containers) == 0
-	for i := 0; i < len(containers); i++ {
-		value := &containers[i]
-		path := containersPath
-		if first {
-			first = false
-		} else {
-			path = path + "/-"
-		}
-		patch = append(patch, patchOperation{
-			Op:    "add",
-			Path:  path,
-			Value: value,
-		})
-	}
-
-	return patch
-}
-
-func isSupportKind(request *v1.AdmissionRequest) bool {
-	return request.Kind.Kind == pod || request.Kind.Kind == deployment
-}
-
-func errorReviewResponse(err error) *v1.AdmissionResponse {
-	return &v1.AdmissionResponse{
-		Result: &metav1.Status{
-			Message: err.Error(),
-		},
-	}
-}
-
-func okReviewResponse() *v1.AdmissionResponse {
-	return &v1.AdmissionResponse{
-		Allowed: true,
-	}
 }
 
 func createReviewResponse(data []byte) *v1.AdmissionResponse {
@@ -159,76 +104,42 @@ func msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (s
 	return value, ok
 }
 
-func validateAnnotationValue(value string) error {
-	urls, err := parseAnnotationValue(value)
-	logrus.Infof("Annotation result: %v", urls)
-	return err
-}
-
-func parseAnnotationValue(value string) ([]*NSUrl, error) {
-	var result []*NSUrl
-	urls := strings.Split(value, ",")
-	for _, u := range urls {
-		nsurl, err := parseNSUrl(u)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, nsurl)
-	}
-	return result, nil
-}
-
-func parseNSUrl(urlString string) (*NSUrl, error) {
-	result := &NSUrl{}
-	// Remove possible leading spaces from network service name
-	urlString = strings.Trim(urlString, " ")
-	url, err := url.Parse(urlString)
-	if err != nil {
-		return nil, err
-	}
-	path := strings.Split(url.Path, "/")
-	if len(path) > 2 {
-		return nil, errors.New("Invalid NSUrl format")
-	}
-	if len(path) == 2 {
-		if len(path[1]) > 15 {
-			return nil, errors.New("Interface part cannot exceed 15 characters")
-		}
-		result.Intf = path[1]
-	}
-	result.NsName = path[0]
-	result.Params = url.Query()
-	return result, nil
-}
-
-func getPullPolicyValue() corev1.PullPolicy {
-	pullPolicy := os.Getenv(pullPolicyEnv)
-	if pullPolicy == "" {
-		return corev1.PullIfNotPresent
-	}
-
-	return corev1.PullPolicy(pullPolicy)
-}
-
 func getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
 	result := &podSpecAndMeta{}
-	if request.Kind.Kind == deployment {
-		var deployment appsv1.Deployment
-		if err := json.Unmarshal(request.Object.Raw, &deployment); err != nil {
+	switch request.Kind.Kind {
+	case deployment:
+		var d appsv1.Deployment
+		if err := json.Unmarshal(request.Object.Raw, &d); err != nil {
 			logrus.Errorf("Could not unmarshal raw object: %v", err)
 			return nil, err
 		}
-		result.meta = &deployment.ObjectMeta
-		result.spec = &deployment.Spec.Template.Spec
-	}
-	if request.Kind.Kind == pod {
-		var pod corev1.Pod
-		if err := json.Unmarshal(request.Object.Raw, &pod); err != nil {
+		result.meta = &d.ObjectMeta
+		result.spec = &d.Spec.Template.Spec
+	case pod:
+		var p corev1.Pod
+		if err := json.Unmarshal(request.Object.Raw, &p); err != nil {
 			logrus.Errorf("Could not unmarshal raw object: %v", err)
 			return nil, err
 		}
-		result.meta = &pod.ObjectMeta
-		result.spec = &pod.Spec
+		result.meta = &p.ObjectMeta
+		result.spec = &p.Spec
+	case statefulSet:
+		var ss appsv1.StatefulSet
+		if err := json.Unmarshal(request.Object.Raw, &ss); err != nil {
+			logrus.Errorf("Could not unmarshal raw object: %v", err)
+			return nil, err
+		}
+		result.meta = &ss.ObjectMeta
+		result.spec = &ss.Spec.Template.Spec
+	case daemonSet:
+		var ds appsv1.StatefulSet
+		if err := json.Unmarshal(request.Object.Raw, &ds); err != nil {
+			logrus.Errorf("Could not unmarshal raw object: %v", err)
+			return nil, err
+		}
+		result.meta = &ds.ObjectMeta
+		result.spec = &ds.Spec.Template.Spec
 	}
+
 	return result, nil
 }

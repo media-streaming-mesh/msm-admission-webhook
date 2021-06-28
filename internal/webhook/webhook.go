@@ -1,17 +1,20 @@
 package webhook
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 
-	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/runtime"
 
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	admissionregistrationclientv1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
 )
 
 // New creates a new Server with the provided options
@@ -41,6 +44,8 @@ type MsmWebhook struct {
 
 	server       *http.Server
 	deserializer runtime.Decoder
+	caBundle     []byte
+	client       admissionregistrationclientv1.AdmissionregistrationV1Interface
 }
 
 // Deps list dependencies for the Server
@@ -49,30 +54,41 @@ type Deps struct {
 }
 
 // Init initializes the server
-func (w *MsmWebhook) Init() error {
+func (w *MsmWebhook) Init(ctx context.Context) error {
+	var err error
 	w.Log.Info("Initializing server")
+	defer w.Log.Info("Server successfully initialized")
 
 	runtimeScheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(runtimeScheme)
-	_ = admissionregistrationv1.AddToScheme(runtimeScheme)
-	//	_ = v1.AddToScheme(runtimeScheme)
-
 	w.deserializer = serializer.NewCodecFactory(runtimeScheme).UniversalDeserializer()
 
-	// read and parse the certificates
-	pair, err := tls.LoadX509KeyPair(certFile, keyFile)
+	// create certificates
+	cert := w.selfSignedCert()
+
+	// admission webhook registration
+	c, err := rest.InClusterConfig()
 	if err != nil {
-		w.Log.Errorf("Failed to load key pair: %v", err)
-		return err
+		panic(err.Error())
 	}
 
+	clientset, err := kubernetes.NewForConfig(c)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.client = clientset.AdmissionregistrationV1()
+
+	err = w.Register(ctx)
+	if err != nil {
+		w.Log.Fatal(err.Error())
+	}
+
+	// http server and server handler initialization
 	w.server = &http.Server{
 		Addr: fmt.Sprintf(":%v", defaultPort),
 		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{pair},
+			Certificates: []tls.Certificate{cert},
 		},
 	}
-	// http server and server handler initialization
 	mux := http.NewServeMux()
 	mux.HandleFunc("/mutate", w.handle)
 	w.server.Handler = mux
@@ -81,9 +97,12 @@ func (w *MsmWebhook) Init() error {
 }
 
 func (w *MsmWebhook) Start() error {
+	w.Log.Infof("Server successfully started: listening on port 443")
 	return w.server.ListenAndServeTLS("", "")
 }
 
 func (w *MsmWebhook) Close() {
+	defer w.Log.Infof("Server successfully closed")
+	_ = w.Unregister(context.Background())
 	_ = w.server.Close()
 }

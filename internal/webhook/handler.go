@@ -33,6 +33,8 @@ func (w *MsmWebhook) handle(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 	msmAdmissionWebhookReview.Response.UID = requestReview.Request.UID
+	msmAdmissionWebhookReview.Kind = "AdmissionReview"
+	msmAdmissionWebhookReview.APIVersion = "admission.k8s.io/v1"
 
 	resp, err := json.Marshal(msmAdmissionWebhookReview)
 	if err != nil {
