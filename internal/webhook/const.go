@@ -28,7 +28,7 @@ const (
 	defaultPort    = 443
 	defaultRepo    = "ciscolabs"
 	defaultTag     = "latest"
-	defaultSidecar = "msm-proxy"
+	defaultSidecar = "msm-rtsp-stub"
 	pullPolicyEnv  = "IMAGE_PULL_POLICY"
 	repoEnv        = "REPO"
 	tagEnv         = "TAG"
@@ -40,8 +40,7 @@ const (
 	msmServiceName   = "msm-admission-webhook-svc"
 	msmName          = "msm-admission-webhook"
 	msmNamespace     = "default"
-	msmVolume        = "msm-volume"
-	msmVolumeCfg     = "msm-proxy-cfg"
+	msmConfigMap     = "msm-sidecar-cfg"
 
 	// k8s-specific values
 	deployment                = "Deployment"
