@@ -128,8 +128,8 @@ func getTag() string {
 	return tag
 }
 
-func getLogLvl() string {
-	logLvl := os.Getenv(logLvlEnv)
+func getMsmLogLvl() string {
+	logLvl := os.Getenv(msmLogLvlEnv)
 	if logLvl == "" {
 		return defaultLogLvl
 	}
@@ -138,17 +138,11 @@ func getLogLvl() string {
 }
 
 func getMsmCpEnv() string {
-	cpEnv := os.Getenv(msmCpEnv)
-	// handle empty env case
-
-	return cpEnv
+	return os.Getenv(msmCpEnv)
 }
 
 func getMsmDpEnv() string {
-	dpEnv := os.Getenv(msmDpEnv)
-	// handle empty env case
-
-	return dpEnv
+	return os.Getenv(msmDpEnv)
 }
 
 func (w *MsmWebhook) applyDeploymentKind(patches []patchOperation, kind string) {

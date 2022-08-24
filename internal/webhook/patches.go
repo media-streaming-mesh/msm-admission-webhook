@@ -18,6 +18,7 @@ package webhook
 
 import (
 	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -52,8 +53,8 @@ func createMsmContainerPatch(tuple *podSpecAndMeta, annotationValue string) (pat
 
 		Env: []corev1.EnvVar{
 			{
-				Name:  logLvlEnv,
-				Value: getLogLvl(),
+				Name:  msmLogLvlEnv,
+				Value: getMsmLogLvl(),
 			},
 			{
 				Name:  msmCpEnv,

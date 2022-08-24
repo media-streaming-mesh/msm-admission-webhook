@@ -33,8 +33,8 @@ const (
 	repoEnv        = "REPO"
 	tagEnv         = "TAG"
 	sidecarEnv     = "MSM_SIDECAR"
-	logLvlEnv      = "MSM_LOG_LVL"
-	defaultLogLvl  = "INFO"
+	msmLogLvlEnv   = "MSM_LOG_LVL"
+	defaultLogLvl  = "WARN"
 	msmCpEnv       = "MSM_CONTROL_PLANE"
 	msmDpEnv       = "MSM_DATA_PLANE"
 
