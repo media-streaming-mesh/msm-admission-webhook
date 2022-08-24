@@ -18,7 +18,6 @@ package webhook
 
 import (
 	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -50,25 +49,24 @@ func createMsmContainerPatch(tuple *podSpecAndMeta, annotationValue string) (pat
 			RunAsGroup:               &uid,
 			AllowPrivilegeEscalation: new(bool),
 		},
-		VolumeMounts: []corev1.VolumeMount{{
-			ReadOnly:  false,
-			Name:      msmVolume,
-			MountPath: "/tmp",
-		}},
+
+		Env: []corev1.EnvVar{
+			{
+				Name:  logLvlEnv,
+				Value: getLogLvl(),
+			},
+			{
+				Name:  msmCpEnv,
+				Value: getMsmCpEnv(),
+			},
+			{
+				Name:  msmDpEnv,
+				Value: getMsmDpEnv(),
+			},
+		},
 	}
 
 	patch = append(patch, addContainer(tuple.spec, []corev1.Container{msmProxyContainer})...)
-	patch = append(patch, addVolume(tuple.spec,
-		[]corev1.Volume{{
-			Name: msmVolume,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: msmVolumeCfg,
-					},
-				},
-			},
-		}})...)
 
 	return patch
 }
@@ -90,26 +88,5 @@ func addContainer(spec *corev1.PodSpec, containers []corev1.Container) (patch []
 		})
 	}
 
-	return patch
-}
-
-func addVolume(spec *corev1.PodSpec, added []corev1.Volume) (patch []patchOperation) {
-	first := len(spec.Volumes) == 0
-	var value interface{}
-	for i := 0; i < len(added); i++ {
-		value = added[i]
-		path := volumePath
-		if first {
-			first = false
-			value = []corev1.Volume{added[i]}
-		} else {
-			path = path + "/-"
-		}
-		patch = append(patch, patchOperation{
-			Op:    "add",
-			Path:  path,
-			Value: value,
-		})
-	}
 	return patch
 }

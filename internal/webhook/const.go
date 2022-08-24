@@ -24,15 +24,19 @@ const (
 	emptyBody            = "empty body"
 	unsupportedKind      = "kind %v is not supported"
 
-	// defaults values
+	// msm-config values
 	defaultPort    = 443
 	defaultRepo    = "ciscolabs"
 	defaultTag     = "latest"
-	defaultSidecar = "msm-proxy"
+	defaultSidecar = "msm-rtsp-stub"
 	pullPolicyEnv  = "IMAGE_PULL_POLICY"
 	repoEnv        = "REPO"
 	tagEnv         = "TAG"
 	sidecarEnv     = "MSM_SIDECAR"
+	logLvlEnv      = "MSM_LOG_LVL"
+	defaultLogLvl  = "INFO"
+	msmCpEnv       = "MSM_CONTROL_PLANE"
+	msmDpEnv       = "MSM_DATA_PLANE"
 
 	// msm-specific values
 	msmAnnotationKey = "sidecar.mediastreamingmesh.io/inject"
@@ -40,8 +44,7 @@ const (
 	msmServiceName   = "msm-admission-webhook-svc"
 	msmName          = "msm-admission-webhook"
 	msmNamespace     = "default"
-	msmVolume        = "msm-volume"
-	msmVolumeCfg     = "msm-proxy-cfg"
+	msmConfigMap     = "msm-sidecar-cfg"
 
 	// k8s-specific values
 	deployment                = "Deployment"

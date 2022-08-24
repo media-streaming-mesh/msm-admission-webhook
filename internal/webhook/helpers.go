@@ -128,6 +128,29 @@ func getTag() string {
 	return tag
 }
 
+func getLogLvl() string {
+	logLvl := os.Getenv(logLvlEnv)
+	if logLvl == "" {
+		return defaultLogLvl
+	}
+
+	return logLvl
+}
+
+func getMsmCpEnv() string {
+	cpEnv := os.Getenv(msmCpEnv)
+	// handle empty env case
+
+	return cpEnv
+}
+
+func getMsmDpEnv() string {
+	dpEnv := os.Getenv(msmDpEnv)
+	// handle empty env case
+
+	return dpEnv
+}
+
 func (w *MsmWebhook) applyDeploymentKind(patches []patchOperation, kind string) {
 	switch kind {
 	case pod:
