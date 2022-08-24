@@ -24,7 +24,7 @@ const (
 	emptyBody            = "empty body"
 	unsupportedKind      = "kind %v is not supported"
 
-	// defaults values
+	// msm-config values
 	defaultPort    = 443
 	defaultRepo    = "ciscolabs"
 	defaultTag     = "latest"
@@ -33,6 +33,10 @@ const (
 	repoEnv        = "REPO"
 	tagEnv         = "TAG"
 	sidecarEnv     = "MSM_SIDECAR"
+	logLvlEnv      = "LOG_LVL"
+	defaultLogLvl  = "INFO"
+	msmCpEnv       = "MSM_CONTROL_PLANE"
+	msmDpEnv       = "MSM_DATA_PLANE"
 
 	// msm-specific values
 	msmAnnotationKey = "sidecar.mediastreamingmesh.io/inject"

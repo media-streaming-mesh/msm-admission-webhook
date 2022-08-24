@@ -18,7 +18,6 @@ package webhook
 
 import (
 	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -50,39 +49,19 @@ func createMsmContainerPatch(tuple *podSpecAndMeta, annotationValue string) (pat
 			RunAsGroup:               &uid,
 			AllowPrivilegeEscalation: new(bool),
 		},
+
 		Env: []corev1.EnvVar{
 			{
-				Name: "LOG_LVL",
-				ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: msmConfigMap,
-						},
-						Key: "LOG_LVL",
-					},
-				},
+				Name:  logLvlEnv,
+				Value: getLogLvl(),
 			},
 			{
-				Name: "MSM_CONTROL_PLANE",
-				ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: msmConfigMap,
-						},
-						Key: "MSM_CONTROL_PLANE",
-					},
-				},
+				Name:  msmCpEnv,
+				Value: getMsmCpEnv(),
 			},
 			{
-				Name: "MSM_DATA_PLANE",
-				ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: msmConfigMap,
-						},
-						Key: "MSM_DATA_PLANE",
-					},
-				},
+				Name:  msmDpEnv,
+				Value: getMsmDpEnv(),
 			},
 		},
 	}
