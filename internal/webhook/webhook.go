@@ -20,6 +20,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 
 	"k8s.io/client-go/kubernetes"
@@ -62,6 +64,7 @@ type MsmWebhook struct {
 	deserializer runtime.Decoder
 	caBundle     []byte
 	client       admissionregistrationclientv1.AdmissionregistrationV1Interface
+	namespace    string
 }
 
 // Deps list dependencies for the Server
@@ -74,6 +77,15 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	var err error
 	w.Log.Info("Initializing server")
 	defer w.Log.Info("Server successfully initialized")
+
+	// Get the current namespace of the pod
+	currentNamespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		log.Fatalf("unable to read current namespace")
+	}
+
+	w.Log.Info("current namespace is %v", string(currentNamespace))
+	w.namespace = string(currentNamespace)
 
 	runtimeScheme := runtime.NewScheme()
 	w.deserializer = serializer.NewCodecFactory(runtimeScheme).UniversalDeserializer()

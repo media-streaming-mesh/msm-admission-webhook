@@ -43,7 +43,6 @@ const (
 	msmAnnotation    = "mediastreamingmesh.io"
 	msmServiceName   = "msm-admission-webhook-svc"
 	msmName          = "msm-admission-webhook"
-	msmNamespace     = "default"
 	msmConfigMap     = "msm-sidecar-cfg"
 
 	// k8s-specific values
