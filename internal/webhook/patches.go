@@ -18,7 +18,6 @@ package webhook
 
 import (
 	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -63,6 +62,46 @@ func createMsmContainerPatch(tuple *podSpecAndMeta, annotationValue string) (pat
 			{
 				Name:  msmDpEnv,
 				Value: getMsmDpEnv(),
+			},
+			{
+				Name: podName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: podNamePath,
+					},
+				},
+			},
+			{
+				Name: nodeName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: nodeNamePath,
+					},
+				},
+			},
+			{
+				Name: nsName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: nsPath,
+					},
+				},
+			},
+			{
+				Name: podIPName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: podIPPath,
+					},
+				},
+			},
+			{
+				Name: saName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: saPath,
+					},
+				},
 			},
 		},
 	}
