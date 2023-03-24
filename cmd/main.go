@@ -22,8 +22,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/media-streaming-mesh/msm-admission-webhook/internal/webhook"
 	log "github.com/sirupsen/logrus"
+	"media-streaming-mesh/msm-admission-webhook/internal/webhook"
 )
 
 var (

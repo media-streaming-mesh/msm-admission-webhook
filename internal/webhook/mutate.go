@@ -51,7 +51,10 @@ var (
 )
 
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
-	w.Log.Debugf("AdmissionReview for request=%v", request)
+	w.Log.Debugf("AdmissionReview for request UID %s, Kind %s, "+
+		"Resource %s, Name %s, Namespace %s, Operation %s ",
+		request.UID, request.Kind, request.Resource, request.Name,
+		request.Namespace, request.Operation)
 
 	if !isSupportKind(request) {
 		return okReviewResponse()

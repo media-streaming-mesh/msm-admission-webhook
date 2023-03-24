@@ -57,4 +57,16 @@ const (
 	containersPath            = "/spec/containers"
 	admissionReviewKind       = "AdmissionReview"
 	admissionReviewAPIVersion = "admission.k8s.io/v1"
+
+	// Downward API Injection values
+	podName      = "MSM_POD_NAME"
+	podNamePath  = "metadata.name"
+	nodeName     = "MSM_NODE_NAME"
+	nodeNamePath = "spec.nodeName"
+	nsName       = "MSM_POD_NAMESPACE"
+	nsPath       = "metadata.namespace"
+	podIPName    = "MSM_POD_IP"
+	podIPPath    = "status.podIP"
+	saName       = "MSM_POD_SERVICE_ACCOUNT"
+	saPath       = "spec.serviceAccountName"
 )

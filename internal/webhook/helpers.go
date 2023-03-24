@@ -165,3 +165,15 @@ func (w *MsmWebhook) applyDeploymentKind(patches []patchOperation, kind string) 
 		w.Log.Fatalf(unsupportedKind, kind)
 	}
 }
+
+func getFieldPath(name string, path string) corev1.EnvVar {
+	env := corev1.EnvVar{
+		Name: name,
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: path,
+			},
+		},
+	}
+	return env
+}
