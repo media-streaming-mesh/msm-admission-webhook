@@ -71,7 +71,7 @@ func (w *MsmWebhook) Register(ctx context.Context) error {
 				FailurePolicy:           &policy,
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Namespace: msmNamespace,
+						Namespace: w.namespace,
 						Name:      msmServiceName,
 						Path:      &path,
 					},
@@ -109,8 +109,8 @@ func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 		KeyUsage: x509.KeyUsageKeyEncipherment |
 			x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		DNSNames: []string{
-			fmt.Sprintf("%v.%v", msmServiceName, msmNamespace),
-			fmt.Sprintf("%v.%v.svc", msmServiceName, msmNamespace),
+			fmt.Sprintf("%v.%v", msmServiceName, w.namespace),
+			fmt.Sprintf("%v.%v.svc", msmServiceName, w.namespace),
 		},
 	}
 
