@@ -1,9 +1,8 @@
-module media-streaming-mesh/msm-admission-webhook
+module github.com/media-streaming-mesh/msm-admission-webhook
 
-go 1.19
+go 1.20
 
 require (
-	github.com/media-streaming-mesh/msm-admission-webhook v0.0.0-20220824173049-7c3aac7855f0
 	github.com/sirupsen/logrus v1.9.0
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
