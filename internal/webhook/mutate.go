@@ -43,12 +43,10 @@ type patchOperation struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-var (
-	ignoredNamespaces = []string{
-		metav1.NamespaceSystem,
-		metav1.NamespacePublic,
-	}
-)
+var ignoredNamespaces = []string{
+	metav1.NamespaceSystem,
+	metav1.NamespacePublic,
+}
 
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
 	w.Log.Debugf("AdmissionReview for request UID %s, Kind %s, "+
@@ -102,7 +100,6 @@ func createReviewResponse(data []byte) *v1.AdmissionResponse {
 }
 
 func (w *MsmWebhook) msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
-
 	// skip special kubernetes system namespaces
 	for _, namespace := range ignoredNamespaceList {
 		if tuple.meta.Namespace == namespace {

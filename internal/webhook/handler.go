@@ -29,7 +29,6 @@ import (
 
 // handle is the http handler for msm webhook admission requests
 func (w *MsmWebhook) handle(rw http.ResponseWriter, r *http.Request) {
-
 	body, err := w.readRequest(r)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
