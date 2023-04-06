@@ -84,7 +84,7 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 		log.Fatalf("unable to read current namespace")
 	}
 
-	w.Log.Info("current namespace is %v", string(currentNamespace))
+	w.Log.Infof("current namespace is %v", string(currentNamespace))
 	w.namespace = string(currentNamespace)
 
 	runtimeScheme := runtime.NewScheme()
