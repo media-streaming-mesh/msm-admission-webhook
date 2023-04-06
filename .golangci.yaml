@@ -1,0 +1,23 @@
+timeout: 10m
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/media-streaming-mesh/msm-admission-webhook)
+  goimports:
+    local-prefixes: github.com/media-streaming-mesh/msm-admission-webhook
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+    - whitespace
+
+    # FIXME
+    # - revive
+    # - staticcheck
+    # - stylecheck
