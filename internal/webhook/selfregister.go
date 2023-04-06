@@ -17,7 +17,6 @@
 package webhook
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -27,71 +26,7 @@ import (
 	"fmt"
 	"math/big"
 	"time"
-
-	admissionv1 "k8s.io/api/admissionregistration/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// Register registers MutatingWebhookConfiguration
-func (w *MsmWebhook) Register(ctx context.Context) error {
-	w.Log.Infof("Registering MutatingWebhookConfiguration")
-	defer w.Log.Infof("Successfully registered MutatingWebhookConfiguration")
-
-	path := "/mutate"
-	policy := admissionv1.Fail
-	sideEffects := admissionv1.SideEffectClassNone
-
-	webhookConfig := &admissionv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: msmName,
-		},
-		Webhooks: []admissionv1.MutatingWebhook{
-			{
-				Name: fmt.Sprintf("%v.%v", msmName, msmAnnotation),
-				Rules: []admissionv1.RuleWithOperations{
-					{
-						Operations: []admissionv1.OperationType{admissionv1.Create, admissionv1.Update},
-						Rule: admissionv1.Rule{
-							APIGroups:   []string{""},
-							APIVersions: []string{"v1"},
-							Resources:   []string{"pods"},
-						},
-					},
-					{
-						Operations: []admissionv1.OperationType{admissionv1.Create, admissionv1.Update},
-						Rule: admissionv1.Rule{
-							APIGroups:   []string{"extensions"},
-							APIVersions: []string{"v1"},
-							Resources:   []string{"deployments"},
-						},
-					},
-				},
-				SideEffects:             &sideEffects,
-				AdmissionReviewVersions: []string{"v1"},
-				FailurePolicy:           &policy,
-				ClientConfig: admissionv1.WebhookClientConfig{
-					Service: &admissionv1.ServiceReference{
-						Namespace: w.namespace,
-						Name:      msmServiceName,
-						Path:      &path,
-					},
-					CABundle: w.caBundle,
-				},
-			},
-		},
-	}
-	_, err := w.client.MutatingWebhookConfigurations().Create(ctx, webhookConfig, metav1.CreateOptions{})
-
-	return err
-}
-
-// Unregister unregisters MutatingWebhookConfiguration
-func (w *MsmWebhook) Unregister(ctx context.Context) error {
-	w.Log.Infof("Unregistering MutatingWebhookConfiguration")
-	defer w.Log.Infof("Successfully unregistered MutatingWebhookConfiguration")
-
-	return w.client.MutatingWebhookConfigurations().Delete(ctx, msmName, metav1.DeleteOptions{})
-}
 
 func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 	now := time.Now()

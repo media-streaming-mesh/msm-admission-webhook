@@ -105,11 +105,6 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	}
 	w.client = clientset.AdmissionregistrationV1()
 
-	err = w.Register(ctx)
-	if err != nil {
-		return err
-	}
-
 	// http server and server handler initialization
 	w.server = &http.Server{
 		Addr: fmt.Sprintf(":%v", defaultPort),
@@ -135,6 +130,5 @@ func (w *MsmWebhook) Start() error {
 func (w *MsmWebhook) Close() {
 	defer w.Log.Infof("Server successfully closed")
 
-	_ = w.Unregister(context.Background())
 	_ = w.server.Close()
 }

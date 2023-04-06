@@ -39,11 +39,10 @@ const (
 	msmDpEnv       = "MSM_DATA_PLANE"
 
 	// msm-specific values
-	msmAnnotationKey = "sidecar.mediastreamingmesh.io/inject"
-	msmAnnotation    = "mediastreamingmesh.io"
-	msmServiceName   = "msm-admission-webhook-svc"
-	msmName          = "msm-admission-webhook"
-	msmConfigMap     = "msm-sidecar-cfg"
+	msmLabelKey    = "sidecar.mediastreamingmesh.io/inject"
+	msmServiceName = "msm-admission-webhook-svc"
+	msmName        = "msm-admission-webhook"
+	msmConfigMap   = "msm-sidecar-cfg"
 
 	// k8s-specific values
 	deployment                = "Deployment"
@@ -69,3 +68,5 @@ const (
 	saName       = "MSM_POD_SERVICE_ACCOUNT"
 	saPath       = "spec.serviceAccountName"
 )
+
+var MsmNamespace = ""

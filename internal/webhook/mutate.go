@@ -63,7 +63,7 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 		return errorReviewResponse(err)
 	}
 
-	value, ok := w.msmAnnotationValue(ignoredNamespaces, metaAndSpec)
+	value, ok := w.msmLabelValue(ignoredNamespaces, metaAndSpec)
 	if !ok {
 		w.Log.Infof("Skipping validation for %s/%s due to policy check", metaAndSpec.meta.Namespace, metaAndSpec.meta.Name)
 		return okReviewResponse()
@@ -99,7 +99,8 @@ func createReviewResponse(data []byte) *v1.AdmissionResponse {
 	}
 }
 
-func (w *MsmWebhook) msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
+func (w *MsmWebhook) msmLabelValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
+
 	// skip special kubernetes system namespaces
 	for _, namespace := range ignoredNamespaceList {
 		if tuple.meta.Namespace == namespace {
@@ -108,13 +109,13 @@ func (w *MsmWebhook) msmAnnotationValue(ignoredNamespaceList []string, tuple *po
 		}
 	}
 
-	annotations := tuple.meta.GetAnnotations()
-	if annotations == nil {
-		w.Log.Info("No annotations, skip")
+	labels := tuple.meta.GetLabels()
+	if labels == nil {
+		w.Log.Info("No labels, skip")
 		return "", false
 	}
 
-	value, ok := annotations[msmAnnotationKey]
+	value, ok := labels[msmLabelKey]
 	return value, ok
 }
 
