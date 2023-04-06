@@ -23,7 +23,8 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
-	"media-streaming-mesh/msm-admission-webhook/internal/webhook"
+
+	"github.com/media-streaming-mesh/msm-admission-webhook/internal/webhook"
 )
 
 var (
@@ -65,7 +66,7 @@ func main() {
 		logger.Fatalf("Could not initialize admission webhook, aborting with error=%s", err)
 	}
 
-	var startServerErr = make(chan error)
+	startServerErr := make(chan error)
 	go func() {
 		startServerErr <- w.Start()
 	}()
@@ -79,7 +80,6 @@ func main() {
 		w.Close()
 		return
 	}
-
 }
 
 // sets the log level of the logger
@@ -102,5 +102,4 @@ func setLogLvl(l *log.Logger) {
 	default:
 		l.SetLevel(log.WarnLevel)
 	}
-
 }

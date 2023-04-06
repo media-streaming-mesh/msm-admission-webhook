@@ -115,13 +115,11 @@ func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 	}
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-
 	if err != nil {
 		panic(err.Error())
 	}
 
 	certRaw, err := x509.CreateCertificate(rand.Reader, template, template, privateKey.Public(), privateKey)
-
 	if err != nil {
 		panic(err.Error())
 	}
@@ -137,7 +135,6 @@ func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 	})
 
 	result, err := tls.X509KeyPair(pemCert, pemKey)
-
 	if err != nil {
 		panic(err.Error())
 	}
