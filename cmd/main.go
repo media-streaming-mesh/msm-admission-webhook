@@ -40,14 +40,14 @@ func init() {
 	// Output to stdout instead of the default stderr
 	logger.SetOutput(os.Stdout)
 	setLogLvl(logger)
-	webhook.MsmNamespace = os.Getenv("IGNORED_NAMESPACE")
+	webhook.IgnoredNamespaces = append(webhook.IgnoredNamespaces, os.Getenv("IGNORED_NAMESPACE"))
+	webhook.MsmWHConfigName = os.Getenv("WEBHOOK_CONFIG_NAME")
 
 }
 
 // main entry point of msm-webhook application
 func main() {
 	logger.Info("Starting MSM Admission Webhook")
-	logger.Infof("JAJ  control namespace %s", webhook.MsmNamespace)
 
 	// Capture signals and block before exit
 	ctx, cancel := signal.NotifyContext(context.Background(),
@@ -77,7 +77,7 @@ func main() {
 	select {
 	case err := <-startServerErr:
 		if ctx.Err() != nil {
-			logger.Fatal(err.Error())
+			logger.Fatalf("Server start failed %s", err.Error())
 		}
 	case <-ctx.Done():
 		w.Close()

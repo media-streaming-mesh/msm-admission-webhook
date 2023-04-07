@@ -43,10 +43,12 @@ type patchOperation struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-var ignoredNamespaces = []string{
-	metav1.NamespaceSystem,
-	metav1.NamespacePublic,
-}
+var (
+	IgnoredNamespaces = []string{
+		metav1.NamespaceSystem,
+		metav1.NamespacePublic,
+	}
+)
 
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
 	w.Log.Debugf("AdmissionReview for request UID %s, Kind %s, "+
@@ -63,7 +65,7 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 		return errorReviewResponse(err)
 	}
 
-	value, ok := w.msmLabelValue(ignoredNamespaces, metaAndSpec)
+	value, ok := w.msmLabelValue(IgnoredNamespaces, metaAndSpec)
 	if !ok {
 		w.Log.Infof("Skipping validation for %s/%s due to policy check", metaAndSpec.meta.Namespace, metaAndSpec.meta.Name)
 		return okReviewResponse()

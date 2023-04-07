@@ -105,6 +105,11 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	}
 	w.client = clientset.AdmissionregistrationV1()
 
+	err = w.patchMutatingWebhookConfig(ctx, MsmWHConfigName)
+	if err != nil {
+		return err
+	}
+
 	// http server and server handler initialization
 	w.server = &http.Server{
 		Addr: fmt.Sprintf(":%v", defaultPort),
@@ -121,7 +126,7 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 
 // Start starts the webhook server
 func (w *MsmWebhook) Start() error {
-	w.Log.Infof("Server successfully started: listening on port 443")
+	w.Log.Infof("Server successfully started: listening on port %d", defaultPort)
 
 	return w.server.ListenAndServeTLS("", "")
 }
@@ -129,6 +134,5 @@ func (w *MsmWebhook) Start() error {
 // Close safely closes the server
 func (w *MsmWebhook) Close() {
 	defer w.Log.Infof("Server successfully closed")
-
 	_ = w.server.Close()
 }

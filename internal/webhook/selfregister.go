@@ -17,15 +17,26 @@
 package webhook
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	backoff "github.com/cenkalti/backoff/v4"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/big"
+	"strings"
 	"time"
+)
+
+var (
+	errNotFound          = errors.New("webhook config not found")
+	errNoWebhookWithName = errors.New("webhook name not found")
 )
 
 func (w *MsmWebhook) selfSignedCert() tls.Certificate {
@@ -76,4 +87,61 @@ func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 
 	w.caBundle = pemCert
 	return result
+}
+
+// patchMutatingWebhookConfig takes a webhookConfigName and patches the CA bundle for that webhook configuration
+func (w *MsmWebhook) patchMutatingWebhookConfig(
+	ctx context.Context,
+	webhookConfigName string) error {
+
+	opts := metav1.GetOptions{
+		TypeMeta:        metav1.TypeMeta{},
+		ResourceVersion: "",
+	}
+
+	/*
+		var config *admitv1.MutatingWebhookConfiguration
+		config, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
+		if err != nil {
+			return err
+		}
+
+	*/
+
+	// Add a backoff in case the config isn't there yet.
+	op := func() error {
+		_, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
+		return err
+	}
+	backoff.Retry(op, backoff.NewExponentialBackOff())
+	// TODO this could be done more efficiently to avoid this additional lookup
+	config, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
+	if err != nil || config == nil {
+		return errNotFound
+	}
+
+	found := false
+	updated := false
+	// caCertPem, err := util.LoadCABundle(w.CABundleWatcher)
+	for i, wh := range config.Webhooks {
+		if strings.HasPrefix(wh.Name, webhookConfigName) {
+			if !bytes.Equal(w.caBundle, config.Webhooks[i].ClientConfig.CABundle) {
+				updated = true
+			}
+			config.Webhooks[i].ClientConfig.CABundle = w.caBundle
+			found = true
+		}
+	}
+	if !found {
+		return errNoWebhookWithName
+	}
+
+	if updated {
+		_, err := w.client.MutatingWebhookConfigurations().Update(ctx, config, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

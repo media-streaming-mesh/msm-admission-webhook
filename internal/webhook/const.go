@@ -69,4 +69,4 @@ const (
 	saPath       = "spec.serviceAccountName"
 )
 
-var MsmNamespace = ""
+var MsmWHConfigName = ""
