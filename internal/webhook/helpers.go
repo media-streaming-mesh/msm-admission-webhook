@@ -35,15 +35,41 @@ func isSupportKind(request *v1.AdmissionRequest) bool {
 
 func errorReviewResponse(err error) *v1.AdmissionResponse {
 	return &v1.AdmissionResponse{
+		UID:     "",
+		Allowed: false,
 		Result: &metav1.Status{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "",
+				APIVersion: "",
+			},
+			ListMeta: metav1.ListMeta{
+				SelfLink:           "",
+				ResourceVersion:    "",
+				Continue:           "",
+				RemainingItemCount: nil,
+			},
+			Status:  "",
 			Message: err.Error(),
+			Reason:  "",
+			Details: nil,
+			Code:    0,
 		},
+		Patch:            nil,
+		PatchType:        nil,
+		AuditAnnotations: nil,
+		Warnings:         nil,
 	}
 }
 
 func okReviewResponse() *v1.AdmissionResponse {
 	return &v1.AdmissionResponse{
-		Allowed: true,
+		UID:              "",
+		Allowed:          true,
+		Result:           nil,
+		Patch:            nil,
+		PatchType:        nil,
+		AuditAnnotations: nil,
+		Warnings:         nil,
 	}
 }
 
@@ -67,7 +93,11 @@ func parseAnnotationValue(value string) ([]*NSUrl, error) {
 }
 
 func parseNSUrl(urlString string) (*NSUrl, error) {
-	result := &NSUrl{}
+	result := &NSUrl{
+		NsName: "",
+		Intf:   "",
+		Params: nil,
+	}
 	// Remove possible leading spaces from network service name
 	urlString = strings.Trim(urlString, " ")
 	url, err := url.Parse(urlString)
@@ -166,6 +196,7 @@ func (w *MsmWebhook) applyDeploymentKind(patches []patchOperation, kind string) 
 	}
 }
 
+/* Unused Function
 func getFieldPath(name string, path string) corev1.EnvVar {
 	env := corev1.EnvVar{
 		Name: name,
@@ -177,3 +208,4 @@ func getFieldPath(name string, path string) corev1.EnvVar {
 	}
 	return env
 }
+*/

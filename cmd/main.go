@@ -27,10 +27,7 @@ import (
 	"github.com/media-streaming-mesh/msm-admission-webhook/internal/webhook"
 )
 
-var (
-	version string
-	logger  *log.Logger
-)
+var logger *log.Logger
 
 // initializes the logger
 func init() {
@@ -42,7 +39,6 @@ func init() {
 	setLogLvl(logger)
 	webhook.IgnoredNamespaces = append(webhook.IgnoredNamespaces, os.Getenv("IGNORED_NAMESPACE"))
 	webhook.MsmWHConfigName = os.Getenv("WEBHOOK_CONFIG_NAME")
-
 }
 
 // main entry point of msm-webhook application

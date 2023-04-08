@@ -22,7 +22,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func createMsmContainerPatch(tuple *podSpecAndMeta, annotationValue string) (patch []patchOperation) {
+//nolint:exhaustruct
+func createMsmContainerPatch(tuple *podSpecAndMeta) (patch []patchOperation) {
 	uid := int64(1337)
 	msmProxyContainer := corev1.Container{
 		Name:            getSidecar(),
@@ -120,7 +121,7 @@ func addContainer(spec *corev1.PodSpec, containers []corev1.Container) (patch []
 		if first {
 			first = false
 		} else {
-			path = path + "/-"
+			path += "/-"
 		}
 		patch = append(patch, patchOperation{
 			Op:    "add",

@@ -27,11 +27,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	backoff "github.com/cenkalti/backoff/v4"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/big"
 	"strings"
 	"time"
+
+	backoff "github.com/cenkalti/backoff/v4"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -92,8 +93,8 @@ func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 // patchMutatingWebhookConfig takes a webhookConfigName and patches the CA bundle for that webhook configuration
 func (w *MsmWebhook) patchMutatingWebhookConfig(
 	ctx context.Context,
-	webhookConfigName string) error {
-
+	webhookConfigName string,
+) error {
 	opts := metav1.GetOptions{
 		TypeMeta:        metav1.TypeMeta{},
 		ResourceVersion: "",
@@ -113,7 +114,10 @@ func (w *MsmWebhook) patchMutatingWebhookConfig(
 		_, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
 		return err
 	}
-	backoff.Retry(op, backoff.NewExponentialBackOff())
+	err := backoff.Retry(op, backoff.NewExponentialBackOff())
+	if err != nil {
+		return errNotFound
+	}
 	// TODO this could be done more efficiently to avoid this additional lookup
 	config, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
 	if err != nil || config == nil {

@@ -43,13 +43,12 @@ type patchOperation struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-var (
-	IgnoredNamespaces = []string{
-		metav1.NamespaceSystem,
-		metav1.NamespacePublic,
-	}
-)
+var IgnoredNamespaces = []string{
+	metav1.NamespaceSystem,
+	metav1.NamespacePublic,
+}
 
+//nolint:exhaustruct
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
 	w.Log.Debugf("AdmissionReview for request UID %s, Kind %s, "+
 		"Resource %s, Name %s, Namespace %s, Operation %s ",
@@ -79,7 +78,7 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 	// todo - init container duplication
 
 	// create container to inject into pod
-	patch := createMsmContainerPatch(metaAndSpec, value)
+	patch := createMsmContainerPatch(metaAndSpec)
 	w.applyDeploymentKind(patch, request.Kind.Kind)
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
@@ -90,19 +89,23 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 	return createReviewResponse(patchBytes)
 }
 
+//nolint:exhaustruct
 func createReviewResponse(data []byte) *v1.AdmissionResponse {
 	return &v1.AdmissionResponse{
+		UID:     "",
 		Allowed: true,
+		Result:  nil,
 		Patch:   data,
 		PatchType: func() *v1.PatchType {
 			pt := v1.PatchTypeJSONPatch
 			return &pt
 		}(),
+		AuditAnnotations: nil,
+		Warnings:         nil,
 	}
 }
 
 func (w *MsmWebhook) msmLabelValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
-
 	// skip special kubernetes system namespaces
 	for _, namespace := range ignoredNamespaceList {
 		if tuple.meta.Namespace == namespace {
@@ -122,7 +125,10 @@ func (w *MsmWebhook) msmLabelValue(ignoredNamespaceList []string, tuple *podSpec
 }
 
 func (w *MsmWebhook) getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
-	result := &podSpecAndMeta{}
+	result := &podSpecAndMeta{
+		meta: nil,
+		spec: nil,
+	}
 	switch request.Kind.Kind {
 	case deployment:
 		var d appsv1.Deployment

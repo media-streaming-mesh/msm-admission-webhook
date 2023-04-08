@@ -81,7 +81,7 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	// Get the current namespace of the pod
 	currentNamespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		log.Fatalf("unable to read current namespace")
+		log.Fatalf("unable to read current namespace") //nolint:all
 	}
 
 	w.Log.Infof("current namespace is %v", string(currentNamespace))
@@ -112,10 +112,14 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 
 	// http server and server handler initialization
 	w.server = &http.Server{
-		Addr: fmt.Sprintf(":%v", defaultPort),
+		Addr:                         fmt.Sprintf(":%v", defaultPort),
+		Handler:                      nil,
+		DisableGeneralOptionsHandler: false,
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
 		},
+		ReadHeaderTimeout: readerTimeout,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/mutate", w.handle)
