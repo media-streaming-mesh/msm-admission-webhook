@@ -34,18 +34,43 @@ func (w *MsmWebhook) handle(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 	}
 
-	msmAdmissionWebhookReview := v1.AdmissionReview{}
+	msmAdmissionWebhookReview := v1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Request:  nil,
+		Response: nil,
+	}
 	requestReview, err := w.parseAdmissionReview(body)
 	if err != nil {
 		msmAdmissionWebhookReview.Response = &v1.AdmissionResponse{
+			UID:     "",
+			Allowed: false,
 			Result: &metav1.Status{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "",
+					APIVersion: "",
+				},
+				ListMeta: metav1.ListMeta{
+					SelfLink:           "",
+					ResourceVersion:    "",
+					Continue:           "",
+					RemainingItemCount: nil,
+				},
+				Status:  "",
 				Message: err.Error(),
+				Reason:  "",
+				Details: nil,
+				Code:    0,
 			},
+			Patch:            nil,
+			PatchType:        nil,
+			AuditAnnotations: nil,
+			Warnings:         nil,
 		}
-	} else {
-		if r.URL.Path == mutateMethod {
-			msmAdmissionWebhookReview.Response = w.mutate(requestReview.Request)
-		}
+	} else if r.URL.Path == mutateMethod {
+		msmAdmissionWebhookReview.Response = w.mutate(requestReview.Request)
 	}
 	msmAdmissionWebhookReview.Response.UID = requestReview.Request.UID
 	msmAdmissionWebhookReview.Kind = admissionReviewKind
@@ -85,7 +110,14 @@ func (w *MsmWebhook) readRequest(r *http.Request) ([]byte, error) {
 }
 
 func (w *MsmWebhook) parseAdmissionReview(body []byte) (*v1.AdmissionReview, error) {
-	r := &v1.AdmissionReview{}
+	r := &v1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Request:  nil,
+		Response: nil,
+	}
 	if _, _, err := w.deserializer.Decode(body, nil, r); err != nil {
 		return nil, err
 	}

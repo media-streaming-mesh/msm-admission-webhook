@@ -81,7 +81,7 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	// Get the current namespace of the pod
 	currentNamespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		log.Fatalf("unable to read current namespace")
+		log.Fatalf("unable to read current namespace") //nolint:all
 	}
 
 	w.Log.Infof("current namespace is %v", string(currentNamespace))
@@ -105,17 +105,21 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	}
 	w.client = clientset.AdmissionregistrationV1()
 
-	err = w.Register(ctx)
+	err = w.patchMutatingWebhookConfig(ctx, MsmWHConfigName)
 	if err != nil {
 		return err
 	}
 
 	// http server and server handler initialization
 	w.server = &http.Server{
-		Addr: fmt.Sprintf(":%v", defaultPort),
+		Addr:                         fmt.Sprintf(":%v", defaultPort),
+		Handler:                      nil,
+		DisableGeneralOptionsHandler: false,
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
 		},
+		ReadHeaderTimeout: readerTimeout,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/mutate", w.handle)
@@ -126,7 +130,7 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 
 // Start starts the webhook server
 func (w *MsmWebhook) Start() error {
-	w.Log.Infof("Server successfully started: listening on port 443")
+	w.Log.Infof("Server successfully started: listening on port %d", defaultPort)
 
 	return w.server.ListenAndServeTLS("", "")
 }
@@ -134,7 +138,5 @@ func (w *MsmWebhook) Start() error {
 // Close safely closes the server
 func (w *MsmWebhook) Close() {
 	defer w.Log.Infof("Server successfully closed")
-
-	_ = w.Unregister(context.Background())
 	_ = w.server.Close()
 }

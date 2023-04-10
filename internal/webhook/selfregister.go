@@ -17,6 +17,7 @@
 package webhook
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -24,74 +25,20 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	backoff "github.com/cenkalti/backoff/v4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Register registers MutatingWebhookConfiguration
-func (w *MsmWebhook) Register(ctx context.Context) error {
-	w.Log.Infof("Registering MutatingWebhookConfiguration")
-	defer w.Log.Infof("Successfully registered MutatingWebhookConfiguration")
-
-	path := "/mutate"
-	policy := admissionv1.Fail
-	sideEffects := admissionv1.SideEffectClassNone
-
-	webhookConfig := &admissionv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: msmName,
-		},
-		Webhooks: []admissionv1.MutatingWebhook{
-			{
-				Name: fmt.Sprintf("%v.%v", msmName, msmAnnotation),
-				Rules: []admissionv1.RuleWithOperations{
-					{
-						Operations: []admissionv1.OperationType{admissionv1.Create, admissionv1.Update},
-						Rule: admissionv1.Rule{
-							APIGroups:   []string{""},
-							APIVersions: []string{"v1"},
-							Resources:   []string{"pods"},
-						},
-					},
-					{
-						Operations: []admissionv1.OperationType{admissionv1.Create, admissionv1.Update},
-						Rule: admissionv1.Rule{
-							APIGroups:   []string{"extensions"},
-							APIVersions: []string{"v1"},
-							Resources:   []string{"deployments"},
-						},
-					},
-				},
-				SideEffects:             &sideEffects,
-				AdmissionReviewVersions: []string{"v1"},
-				FailurePolicy:           &policy,
-				ClientConfig: admissionv1.WebhookClientConfig{
-					Service: &admissionv1.ServiceReference{
-						Namespace: w.namespace,
-						Name:      msmServiceName,
-						Path:      &path,
-					},
-					CABundle: w.caBundle,
-				},
-			},
-		},
-	}
-	_, err := w.client.MutatingWebhookConfigurations().Create(ctx, webhookConfig, metav1.CreateOptions{})
-
-	return err
-}
-
-// Unregister unregisters MutatingWebhookConfiguration
-func (w *MsmWebhook) Unregister(ctx context.Context) error {
-	w.Log.Infof("Unregistering MutatingWebhookConfiguration")
-	defer w.Log.Infof("Successfully unregistered MutatingWebhookConfiguration")
-
-	return w.client.MutatingWebhookConfigurations().Delete(ctx, msmName, metav1.DeleteOptions{})
-}
+var (
+	errNotFound          = errors.New("webhook config not found")
+	errNoWebhookWithName = errors.New("webhook name not found")
+)
 
 func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 	now := time.Now()
@@ -141,4 +88,64 @@ func (w *MsmWebhook) selfSignedCert() tls.Certificate {
 
 	w.caBundle = pemCert
 	return result
+}
+
+// patchMutatingWebhookConfig takes a webhookConfigName and patches the CA bundle for that webhook configuration
+func (w *MsmWebhook) patchMutatingWebhookConfig(
+	ctx context.Context,
+	webhookConfigName string,
+) error {
+	opts := metav1.GetOptions{
+		TypeMeta:        metav1.TypeMeta{},
+		ResourceVersion: "",
+	}
+
+	/*
+		var config *admitv1.MutatingWebhookConfiguration
+		config, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
+		if err != nil {
+			return err
+		}
+
+	*/
+
+	// Add a backoff in case the config isn't there yet.
+	op := func() error {
+		_, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
+		return err
+	}
+	err := backoff.Retry(op, backoff.NewExponentialBackOff())
+	if err != nil {
+		return errNotFound
+	}
+	// TODO this could be done more efficiently to avoid this additional lookup
+	config, err := w.client.MutatingWebhookConfigurations().Get(ctx, webhookConfigName, opts)
+	if err != nil || config == nil {
+		return errNotFound
+	}
+
+	found := false
+	updated := false
+	// caCertPem, err := util.LoadCABundle(w.CABundleWatcher)
+	for i, wh := range config.Webhooks {
+		if strings.HasPrefix(wh.Name, webhookConfigName) {
+			if !bytes.Equal(w.caBundle, config.Webhooks[i].ClientConfig.CABundle) {
+				updated = true
+			}
+			config.Webhooks[i].ClientConfig.CABundle = w.caBundle
+			found = true
+		}
+	}
+	if !found {
+		return errNoWebhookWithName
+	}
+
+	if updated {
+		_, err := w.client.MutatingWebhookConfigurations().Update(ctx, config, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

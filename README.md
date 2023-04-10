@@ -12,10 +12,12 @@ be found here
 [MSM Admission Webhook Helm deployment](https://github.com/media-streaming-mesh/deployments-kubernetes/tree/main/deployments/msm-helm)
 
 ### Pod and Deployment mutation
-At the time of writing the default `webhookconfiguration` will cause
-the server to be called for all pods and all deployments across all
-namespaces. The logic will check for an annotation on the object
-in order to proceed with mutation.  The annotation key should be
+
+When server is called based on the `webhookconfiguration` setup via helm 
+it will ignore some kube system namespaces as well as a namespace set 
+via the IGNORE_NAMESPACE ENV set in the deployment spec.
+The logic will check for an label on the object in order to proceed 
+with mutation.  The label key should be
 `sidecar.mediastreamingmesh.io/inject` it's value does not matter.
 
 ## Implementation Details

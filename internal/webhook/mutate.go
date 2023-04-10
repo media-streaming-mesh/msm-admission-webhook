@@ -43,11 +43,12 @@ type patchOperation struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-var ignoredNamespaces = []string{
+var IgnoredNamespaces = []string{
 	metav1.NamespaceSystem,
 	metav1.NamespacePublic,
 }
 
+//nolint:exhaustruct
 func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse {
 	w.Log.Debugf("AdmissionReview for request UID %s, Kind %s, "+
 		"Resource %s, Name %s, Namespace %s, Operation %s ",
@@ -63,7 +64,7 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 		return errorReviewResponse(err)
 	}
 
-	value, ok := w.msmAnnotationValue(ignoredNamespaces, metaAndSpec)
+	value, ok := w.msmLabelValue(IgnoredNamespaces, metaAndSpec)
 	if !ok {
 		w.Log.Infof("Skipping validation for %s/%s due to policy check", metaAndSpec.meta.Namespace, metaAndSpec.meta.Name)
 		return okReviewResponse()
@@ -77,7 +78,7 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 	// todo - init container duplication
 
 	// create container to inject into pod
-	patch := createMsmContainerPatch(metaAndSpec, value)
+	patch := createMsmContainerPatch(metaAndSpec)
 	w.applyDeploymentKind(patch, request.Kind.Kind)
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
@@ -88,18 +89,23 @@ func (w *MsmWebhook) mutate(request *v1.AdmissionRequest) *v1.AdmissionResponse 
 	return createReviewResponse(patchBytes)
 }
 
+//nolint:exhaustruct
 func createReviewResponse(data []byte) *v1.AdmissionResponse {
 	return &v1.AdmissionResponse{
+		UID:     "",
 		Allowed: true,
+		Result:  nil,
 		Patch:   data,
 		PatchType: func() *v1.PatchType {
 			pt := v1.PatchTypeJSONPatch
 			return &pt
 		}(),
+		AuditAnnotations: nil,
+		Warnings:         nil,
 	}
 }
 
-func (w *MsmWebhook) msmAnnotationValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
+func (w *MsmWebhook) msmLabelValue(ignoredNamespaceList []string, tuple *podSpecAndMeta) (string, bool) {
 	// skip special kubernetes system namespaces
 	for _, namespace := range ignoredNamespaceList {
 		if tuple.meta.Namespace == namespace {
@@ -108,18 +114,21 @@ func (w *MsmWebhook) msmAnnotationValue(ignoredNamespaceList []string, tuple *po
 		}
 	}
 
-	annotations := tuple.meta.GetAnnotations()
-	if annotations == nil {
-		w.Log.Info("No annotations, skip")
+	labels := tuple.meta.GetLabels()
+	if labels == nil {
+		w.Log.Info("No labels, skip")
 		return "", false
 	}
 
-	value, ok := annotations[msmAnnotationKey]
+	value, ok := labels[msmLabelKey]
 	return value, ok
 }
 
 func (w *MsmWebhook) getMetaAndSpec(request *v1.AdmissionRequest) (*podSpecAndMeta, error) {
-	result := &podSpecAndMeta{}
+	result := &podSpecAndMeta{
+		meta: nil,
+		spec: nil,
+	}
 	switch request.Kind.Kind {
 	case deployment:
 		var d appsv1.Deployment

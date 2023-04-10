@@ -16,6 +16,8 @@
 
 package webhook
 
+import "time"
+
 const (
 	// return codes
 	couldNotEncodeReview = "could not encode response: %v"
@@ -39,11 +41,8 @@ const (
 	msmDpEnv       = "MSM_DATA_PLANE"
 
 	// msm-specific values
-	msmAnnotationKey = "sidecar.mediastreamingmesh.io/inject"
-	msmAnnotation    = "mediastreamingmesh.io"
-	msmServiceName   = "msm-admission-webhook-svc"
-	msmName          = "msm-admission-webhook"
-	msmConfigMap     = "msm-sidecar-cfg"
+	msmLabelKey    = "sidecar.mediastreamingmesh.io/inject"
+	msmServiceName = "msm-admission-webhook-svc"
 
 	// k8s-specific values
 	deployment                = "Deployment"
@@ -52,7 +51,6 @@ const (
 	statefulSet               = "StatefulSet"
 	mutateMethod              = "/mutate"
 	deploymentSubPath         = "/spec/template"
-	volumePath                = "/spec/volumes"
 	containersPath            = "/spec/containers"
 	admissionReviewKind       = "AdmissionReview"
 	admissionReviewAPIVersion = "admission.k8s.io/v1"
@@ -68,4 +66,9 @@ const (
 	podIPPath    = "status.podIP"
 	saName       = "MSM_POD_SERVICE_ACCOUNT"
 	saPath       = "spec.serviceAccountName"
+
+	// TLS config values
+	readerTimeout = 120 * time.Second
 )
+
+var MsmWHConfigName = ""
