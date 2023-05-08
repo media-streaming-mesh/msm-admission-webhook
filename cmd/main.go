@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -64,6 +65,15 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Could not initialize admission webhook, aborting with error=%s", err)
 	}
+
+	livenessMux := http.NewServeMux()
+	livenessMux.HandleFunc("/livenessz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	go func() {
+		logger.Info("Starting Liveness server")
+		http.ListenAndServe(":8080", livenessMux)
+	}()
 
 	startServerErr := make(chan error)
 	go func() {
