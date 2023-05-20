@@ -18,14 +18,13 @@ package main
 
 import (
 	"context"
+	"media-streaming-mesh/msm-admission-webhook/internal/webhook"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/media-streaming-mesh/msm-admission-webhook/internal/webhook"
 )
 
 var logger *log.Logger
@@ -33,11 +32,10 @@ var logger *log.Logger
 // initializes the logger
 func init() {
 	logger = log.New()
-	// Log as JSON instead of the default ASCII formatter.
-	logger.SetFormatter(&log.JSONFormatter{})
+	setLogLvl(logger)
+	setLogType(logger)
 	// Output to stdout instead of the default stderr
 	logger.SetOutput(os.Stdout)
-	setLogLvl(logger)
 	webhook.IgnoredNamespaces = append(webhook.IgnoredNamespaces, os.Getenv("IGNORED_NAMESPACE"))
 	webhook.MsmWHConfigName = os.Getenv("WEBHOOK_CONFIG_NAME")
 }
@@ -72,7 +70,10 @@ func main() {
 	})
 	go func() {
 		logger.Info("Starting Liveness server")
-		http.ListenAndServe(":8080", livenessMux)
+		err := http.ListenAndServe(":8080", livenessMux)
+		if err != nil {
+			logger.Fatalf("failed to listen and serve: %v", err)
+		}
 	}()
 
 	startServerErr := make(chan error)
@@ -109,6 +110,18 @@ func setLogLvl(l *log.Logger) {
 	case "FATAL":
 		log.SetLevel(log.FatalLevel)
 	default:
-		l.SetLevel(log.WarnLevel)
+		l.SetLevel(log.DebugLevel)
+	}
+}
+
+// sets the log type of the logger
+func setLogType(l *log.Logger) {
+	logType := os.Getenv("LOG_TYPE")
+
+	switch logType {
+	case "JSON":
+		l.SetFormatter(&log.JSONFormatter{})
+	default:
+		l.SetFormatter(&log.TextFormatter{})
 	}
 }
