@@ -1,6 +1,6 @@
-module github.com/media-streaming-mesh/msm-admission-webhook
+module media-streaming-mesh/msm-admission-webhook
 
-go 1.20
+go 1.19
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
