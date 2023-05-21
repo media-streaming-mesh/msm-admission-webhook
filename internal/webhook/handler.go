@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	v1 "k8s.io/api/admission/v1"
@@ -53,7 +53,6 @@ func (w *MsmWebhook) handle(rw http.ResponseWriter, r *http.Request) {
 					APIVersion: "",
 				},
 				ListMeta: metav1.ListMeta{
-					SelfLink:           "",
 					ResourceVersion:    "",
 					Continue:           "",
 					RemainingItemCount: nil,
@@ -92,7 +91,7 @@ func (w *MsmWebhook) handle(rw http.ResponseWriter, r *http.Request) {
 func (w *MsmWebhook) readRequest(r *http.Request) ([]byte, error) {
 	var body []byte
 	if r.Body != nil {
-		if data, err := ioutil.ReadAll(r.Body); err == nil {
+		if data, err := io.ReadAll(r.Body); err == nil {
 			body = data
 		}
 	}
