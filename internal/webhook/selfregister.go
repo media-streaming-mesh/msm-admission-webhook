@@ -31,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

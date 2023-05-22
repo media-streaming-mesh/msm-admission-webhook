@@ -43,7 +43,6 @@ func errorReviewResponse(err error) *v1.AdmissionResponse {
 				APIVersion: "",
 			},
 			ListMeta: metav1.ListMeta{
-				SelfLink:           "",
 				ResourceVersion:    "",
 				Continue:           "",
 				RemainingItemCount: nil,
@@ -100,25 +99,25 @@ func parseNSUrl(urlString string) (*NSUrl, error) {
 	}
 	// Remove possible leading spaces from network service name
 	urlString = strings.Trim(urlString, " ")
-	url, err := url.Parse(urlString)
+	newUrl, err := url.Parse(urlString)
 	if err != nil {
 		return nil, err
 	}
 
-	path := strings.Split(url.Path, "/")
+	path := strings.Split(newUrl.Path, "/")
 	if len(path) > 2 {
-		return nil, errors.New("Invalid NSUrl format")
+		return nil, errors.New("invalid NSUrl format")
 	}
 
 	if len(path) == 2 {
 		if len(path[1]) > 15 {
-			return nil, errors.New("Interface part cannot exceed 15 characters")
+			return nil, errors.New("interface part cannot exceed 15 characters")
 		}
 		result.Intf = path[1]
 	}
 
 	result.NsName = path[0]
-	result.Params = url.Query()
+	result.Params = newUrl.Query()
 	return result, nil
 }
 

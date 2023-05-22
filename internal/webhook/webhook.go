@@ -20,9 +20,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -79,7 +79,7 @@ func (w *MsmWebhook) Init(ctx context.Context) error {
 	defer w.Log.Info("Server successfully initialized")
 
 	// Get the current namespace of the pod
-	currentNamespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	currentNamespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		log.Fatalf("unable to read current namespace") //nolint:all
 	}
