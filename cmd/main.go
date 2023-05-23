@@ -120,8 +120,15 @@ func setLogType(l *log.Logger) {
 
 	switch logType {
 	case "JSON":
-		l.SetFormatter(&log.JSONFormatter{})
+		l.SetFormatter(&log.JSONFormatter{
+			PrettyPrint: true,
+		})
 	default:
-		l.SetFormatter(&log.TextFormatter{})
+		l.SetFormatter(&log.TextFormatter{
+			ForceColors:     true,
+			DisableColors:   false,
+			FullTimestamp:   true,
+			TimestampFormat: "2006-01-02 15:04:05",
+		})
 	}
 }
