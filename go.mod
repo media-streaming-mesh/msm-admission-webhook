@@ -5,8 +5,8 @@ go 1.20
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/sirupsen/logrus v1.9.3
-	k8s.io/api v0.28.0-alpha.2
-	k8s.io/apimachinery v0.28.0-alpha.2
+	k8s.io/api v0.28.0-alpha.3
+	k8s.io/apimachinery v0.28.0-alpha.3
 	k8s.io/client-go v0.28.0-alpha.2
 )
 
