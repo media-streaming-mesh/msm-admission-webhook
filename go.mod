@@ -3,7 +3,7 @@ module media-streaming-mesh/msm-admission-webhook
 go 1.20
 
 require (
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/sirupsen/logrus v1.9.3
 	k8s.io/api v0.30.0-alpha.0
 	k8s.io/apimachinery v0.30.0-alpha.0
