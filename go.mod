@@ -2,6 +2,8 @@ module media-streaming-mesh/msm-admission-webhook
 
 go 1.22
 
+toolchain go1.22.2
+
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/sirupsen/logrus v1.9.3
