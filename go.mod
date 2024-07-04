@@ -7,7 +7,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	k8s.io/api v0.31.0-alpha.3
 	k8s.io/apimachinery v0.31.0-alpha.3
-	k8s.io/client-go v0.31.0-alpha.2
+	k8s.io/client-go v0.31.0-alpha.3
 )
 
 require (
@@ -32,7 +32,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/oauth2 v0.20.0 // indirect
+	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
