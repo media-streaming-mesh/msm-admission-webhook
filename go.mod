@@ -5,9 +5,9 @@ go 1.22.3
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/sirupsen/logrus v1.9.3
-	k8s.io/api v0.31.0-alpha.3
+	k8s.io/api v0.31.0-beta.0
 	k8s.io/apimachinery v0.31.0-beta.0
-	k8s.io/client-go v0.31.0-alpha.3
+	k8s.io/client-go v0.31.0-beta.0
 )
 
 require (
